@@ -1,0 +1,12 @@
+name:                RackSort
+version:             0.0.0.0
+author:              Jonathan Taylor
+maintainer:          jonathan.taylor@dsl.pipex.com
+build-type:          Simple
+cabal-version:       >= 1.10
+
+executable RackSort
+    hs-source-dirs:     src
+    Main-Is:            RackSort.hs
+    build-depends:      base >=4.7 && <4.8
+    default-language:   Haskell2010
