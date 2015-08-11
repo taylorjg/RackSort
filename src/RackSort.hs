@@ -64,12 +64,18 @@ swapBalls r idx1 idx2 =
         f n _ | n == idx2 = b1
         f _ b = b
 
-findSolutions :: Rack -> [Solution]
-findSolutions r = []
--- wrongness => ws
--- take head ws => w
--- swap w._2 with head w._3
--- re-evaluate wrongness
+solve :: Rack -> Rack
+solve r =
+    loop r ws
+    where
+        ws = wrongness r
+        loop :: Rack -> [(Char,Int,[Int])] -> Rack
+        loop r [] = r
+        loop r ((_, idx1, idx2:_):_) =
+            loop r2 ws2
+            where
+                r2 = swapBalls r idx1 idx2
+                ws2 = wrongness r2
 
 drawRack :: Rack -> IO ()
 drawRack r =
@@ -85,10 +91,5 @@ main :: IO ()
 main = do
     let r1 = "RRRRRRRYYYYYYYB"
     drawRack r1
-    let ws1 = wrongness r1
-    mapM_ print ws1
-    let (_, idx1, idx2:_) = head ws1
-    let r2 = swapBalls r1 idx1 idx2
+    let r2 = solve r1
     drawRack r2
-    let ws2 = wrongness r2
-    mapM_ print ws2
