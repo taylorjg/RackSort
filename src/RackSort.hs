@@ -1,4 +1,5 @@
-import Data.List (intersperse,partition)
+import Data.List (intersperse)
+import Data.Maybe (fromJust)
 
 type Rack = String
 
@@ -21,6 +22,13 @@ redIndices = [0,2,3,7,9,10,13]
 blackIndices :: [Int]
 blackIndices = [4]
 
+coloursToIndices :: [(Char,[Int])]
+coloursToIndices = [
+        ('Y', yellowIndices),
+        ('R', redIndices),
+        ('B', blackIndices)
+    ]
+
 finishedRack :: Rack -> Bool
 finishedRack = (==correctRack)
 
@@ -34,11 +42,18 @@ validRack r =
         numColour :: Char -> Int -> Bool
         numColour c n = length (filter (==c) r) == n
 
-wrongIndices :: Rack -> [Int]
-wrongIndices r =
-    map (\(idx, _, _) -> idx) $ filter (\(_, a, b) -> a /= b) xs
+wrongness :: Rack -> [(Char,Int,[Int])]
+wrongness r =
+    map (\(idx, a, _) -> (a, idx, wrongIndices r a idx)) $
+    filter (\(_, a, b) -> a /= b) xs
     where
         xs = zip3 [0..] r correctRack
+
+wrongIndices :: Rack -> Char -> Int -> [Int]
+wrongIndices r c idx =
+    filter (\n -> r !! n /= c && n /= idx) idxs
+    where
+        idxs = fromJust $ lookup c coloursToIndices
 
 findSolutions :: Rack -> [Solution]
 findSolutions r = []
@@ -62,7 +77,8 @@ draw r =
 
 main :: IO ()
 main = do
-    let r = "RYRRBYYRYRRYYRY"
-    putStrLn $ "finishedRack r = " ++ show (finishedRack r)
-    putStrLn $ "validRack r = " ++ show (validRack r)
-    draw r
+    -- let r = "RYRRBYYRYRRYYRY"
+    -- putStrLn $ "finishedRack r = " ++ show (finishedRack r)
+    -- putStrLn $ "validRack r = " ++ show (validRack r)
+    -- draw r
+    putStrLn $ show (wrongness "RRRRRRRYYYYYYYB")
