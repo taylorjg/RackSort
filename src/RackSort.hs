@@ -10,9 +10,6 @@ data Move
 
 type Solution = [Move]
 
-correctRack :: Rack
-correctRack = "RYRRBYYRYRRYYRY"
-
 yellowIndices :: [Int]
 yellowIndices = [1,5,6,8,11,12,14]
 
@@ -29,17 +26,19 @@ coloursToIndices = [
         ('B', blackIndices)
     ]
 
-finishedRack :: Rack -> Bool
-finishedRack = (==correctRack)
+correctRack :: Rack
+correctRack = "RYRRBYYRYRRYYRY"
 
-validRack :: Rack -> Bool
-validRack r =
+isCorrectRack :: Rack -> Bool
+isCorrectRack = (==correctRack)
+
+isValidRack :: Rack -> Bool
+isValidRack r =
     length r == 15 &&
     numColour 'Y' 7 &&
     numColour 'R' 7 &&
     numColour 'B' 1
     where
-        numColour :: Char -> Int -> Bool
         numColour c n = length (filter (==c) r) == n
 
 wrongness :: Rack -> [(Char,Int,[Int])]
@@ -57,13 +56,6 @@ wrongIndices r c idx =
 
 findSolutions :: Rack -> [Solution]
 findSolutions r = []
--- find wrong indices for each colour in r
--- for each wrong index:
--- build a map of wrong index to list of available correct indices
--- e.g. given a Y in wrong place, build a list of all other yellow
--- indices currently occupied by non-Y.
--- then what ?
--- iterate over the map making swaps
 
 draw :: Rack -> IO ()
 draw r =
@@ -81,4 +73,5 @@ main = do
     -- putStrLn $ "finishedRack r = " ++ show (finishedRack r)
     -- putStrLn $ "validRack r = " ++ show (validRack r)
     -- draw r
-    putStrLn $ show (wrongness "RRRRRRRYYYYYYYB")
+    -- putStrLn $ show (wrongness "RRRRRRRYYYYYYYB")
+    mapM_ putStrLn $ map show (wrongness "RRRRRRRYYYYYYYB")
