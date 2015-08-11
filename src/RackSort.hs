@@ -54,24 +54,41 @@ wrongIndices r c idx =
     where
         idxs = fromJust $ lookup c coloursToIndices
 
+swapBalls :: Rack -> Int -> Int -> Rack
+swapBalls r idx1 idx2 =
+    zipWith f [0..] r
+    where
+        b1 = r !! idx1
+        b2 = r !! idx2
+        f n _ | n == idx1 = b2
+        f n _ | n == idx2 = b1
+        f _ b = b
+
 findSolutions :: Rack -> [Solution]
 findSolutions r = []
+-- wrongness => ws
+-- take head ws => w
+-- swap w._2 with head w._3
+-- re-evaluate wrongness
 
-draw :: Rack -> IO ()
-draw r =
-    mapM_ putStrLn $ map renderLine [0..4]
+drawRack :: Rack -> IO ()
+drawRack r =
+    mapM_ (putStrLn . renderLine) [0..4]
     where
         renderLine n =
-            padding ++ (intersperse ' ' colours)
+            padding ++ intersperse ' ' colours
             where
                 padding = replicate (4 - n) ' '
-                colours = take (n + 1) $ drop (sum [1..n]) $ r
+                colours = take (n + 1) $ drop (sum [1..n]) r
 
 main :: IO ()
 main = do
-    -- let r = "RYRRBYYRYRRYYRY"
-    -- putStrLn $ "finishedRack r = " ++ show (finishedRack r)
-    -- putStrLn $ "validRack r = " ++ show (validRack r)
-    -- draw r
-    -- putStrLn $ show (wrongness "RRRRRRRYYYYYYYB")
-    mapM_ putStrLn $ map show (wrongness "RRRRRRRYYYYYYYB")
+    let r1 = "RRRRRRRYYYYYYYB"
+    drawRack r1
+    let ws1 = wrongness r1
+    mapM_ print ws1
+    let (_, idx1, idx2:_) = head ws1
+    let r2 = swapBalls r1 idx1 idx2
+    drawRack r2
+    let ws2 = wrongness r2
+    mapM_ print ws2
