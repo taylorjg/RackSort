@@ -7,6 +7,7 @@ data Move
     = Swap Int Int Rack Rack
     -- | Cw String Rack
     -- | Ccw String Rack
+    deriving Show
 
 type Solution = [Move]
 
@@ -77,6 +78,20 @@ solve r =
                 r2 = swapBalls r idx1 idx2
                 ws2 = wrongness r2
 
+solve2 :: Rack -> [Move]
+solve2 r =
+    snd $ loop (r,[]) ws
+    where
+        ws = wrongness r
+        loop :: (Rack,[Move]) -> [(Char,Int,[Int])] -> (Rack,[Move])
+        loop t [] = t
+        loop (r1,ms) ((_, idx1, idx2:_):_) =
+            loop (r2,m:ms) ws2
+            where
+                r2 = swapBalls r1 idx1 idx2
+                m = Swap idx1 idx2 r1 r2
+                ws2 = wrongness r2
+
 drawRack :: Rack -> IO ()
 drawRack r =
     mapM_ (putStrLn . renderLine) [0..4]
@@ -93,3 +108,5 @@ main = do
     drawRack r1
     let r2 = solve r1
     drawRack r2
+    let ms = solve2 r1
+    mapM_ print $ reverse ms
