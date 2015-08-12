@@ -76,6 +76,35 @@ solve r =
                     m = Swap idx1 idx2 r1 r2
             _ -> t
 
+solve2 :: Rack -> Move -> Solution
+solve2 r initialMove =
+    reverse $ snd $ loop (r,[initialMove])
+    where
+        loop :: (Rack,[Move]) -> (Rack,[Move])
+        loop t@(r1,ms) = case wrongnesses r1 of
+            ((_, idx1, idx2:_):_) ->
+                loop (r2,m:ms)
+                where
+                    r2 = swapBalls r1 idx1 idx2
+                    m = Swap idx1 idx2 r1 r2
+            _ -> t
+
+uberSolve :: Rack -> [Solution]
+uberSolve r =
+    foldl outerOp [] ws
+    where
+        ws = wrongnesses r
+        outerOp :: [Solution] -> (Char,Int,[Int]) -> [Solution]
+        outerOp outerAcc (_, fromIdx, toIdxs) =
+            outerAcc ++ foldl innerOp [] toIdxs
+            where
+                innerOp :: [Solution] -> Int -> [Solution]
+                innerOp innerAcc toIdx =
+                    solve2 r' m : innerAcc
+                    where
+                        r' = swapBalls r fromIdx toIdx
+                        m = Swap fromIdx toIdx r r'
+
 drawRack :: Rack -> IO ()
 drawRack r =
     mapM_ (putStrLn . renderLine) [0..4]
@@ -86,20 +115,13 @@ drawRack r =
                 padding = replicate (4 - n) ' '
                 colours = take (n + 1) $ drop (sum [1..n]) r
 
+printSolution :: Solution -> IO ()
+printSolution s = do
+    mapM_ print s
+    putStrLn ""
+
 main :: IO ()
 main = do
-
     let r1 = "RRRRRRRYYYYYYYB"
-    drawRack r1
-    let s1 = solve r1
-    mapM_ print s1
-
-    let r2 = rotateRackCw r1
-    drawRack r2
-    let s2 = solve r2
-    mapM_ print s2
-
-    let r3 = rotateRackCcw r1
-    drawRack r3
-    let s3 = solve r3
-    mapM_ print s3
+    let ss = uberSolve r1
+    mapM_ printSolution ss
