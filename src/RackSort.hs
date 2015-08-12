@@ -38,14 +38,14 @@ correctRack = "RYRRBYYRYRRYYRY"
 wrongnesses :: Rack -> [(Char,Int,[Int])]
 wrongnesses r =
     sortBy (\(b1, _, _) (b2, _, _) -> b1 `compare` b2) $
-    map (\(idx, b, _) -> (b, idx, wrongIndices b)) $
+    map (\(idx, b, _) -> (b, idx, destinationIndices b)) $
     filter (\(_, b1, b2) -> b1 /= b2) xs
     where
         xs = zip3 [0..] r correctRack
-        wrongIndices b =
-            filter (\n -> r !! n /= b) idxs
+        destinationIndices b =
+            filter (\n -> r !! n /= b) correctIndices
             where
-                idxs = fromJust $ lookup b coloursToIndices
+                correctIndices = fromJust $ lookup b coloursToIndices
 
 swapBalls :: Rack -> Int -> Int -> Rack
 swapBalls r idx1 idx2 =
@@ -65,17 +65,16 @@ rotateRackCcw r = map (r!!) [14, 9, 13, 5, 8, 12, 2, 4, 7, 11, 0, 1, 3, 6, 10]
 
 solve :: Rack -> Solution
 solve r =
-    reverse $ snd $ loop (r,[]) ws
+    reverse $ snd $ loop (r,[])
     where
-        ws = wrongnesses r
-        loop :: (Rack,[Move]) -> [(Char,Int,[Int])] -> (Rack,[Move])
-        loop t [] = t
-        loop (r1,ms) ((_, idx1, idx2:_):_) =
-            loop (r2,m:ms) ws2
-            where
-                r2 = swapBalls r1 idx1 idx2
-                m = Swap idx1 idx2 r1 r2
-                ws2 = wrongnesses r2
+        loop :: (Rack,[Move]) -> (Rack,[Move])
+        loop t@(r1,ms) = case wrongnesses r1 of
+            ((_, idx1, idx2:_):_) ->
+                loop (r2,m:ms)
+                where
+                    r2 = swapBalls r1 idx1 idx2
+                    m = Swap idx1 idx2 r1 r2
+            _ -> t
 
 drawRack :: Rack -> IO ()
 drawRack r =
