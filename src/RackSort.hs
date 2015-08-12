@@ -57,6 +57,12 @@ swapBalls r idx1 idx2 =
         f n _ | n == idx2 = b1
         f _ b = b
 
+rotateRackCw :: Rack -> Rack
+rotateRackCw r = map (r!!) [10, 11, 6, 12, 7, 3, 13, 8, 4, 1, 14, 9, 5, 2, 0]
+
+rotateRackCcw :: Rack -> Rack
+rotateRackCcw r = map (r!!) [14, 9, 13, 5, 8, 12, 2, 4, 7, 11, 0, 1, 3, 6, 10]
+
 solve :: Rack -> Solution
 solve r =
     reverse $ snd $ loop (r,[]) ws
@@ -86,8 +92,6 @@ main = do
     let r1 = "RRRRRRRYYYYYYYB"
     drawRack r1
     let s = solve r1
-    mapM_ print $ s
-    let lastMove = last s
-    case lastMove of
-        Swap _ _ _ r2 -> drawRack r2
-        _ -> return  ()
+    mapM_ print s
+    let Swap _ _ _ r2 = last s
+    drawRack r2
