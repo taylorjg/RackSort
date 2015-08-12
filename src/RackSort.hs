@@ -5,8 +5,8 @@ type Rack = String
 
 data Move
     = Swap Int Int Rack Rack
-    -- | Cw String Rack
-    -- | Ccw String Rack
+    -- | RotateCw Rack Rack
+    -- | RotateCcw Rack Rack
     deriving Show
 
 type Solution = [Move]
@@ -89,9 +89,18 @@ drawRack r =
 
 main :: IO ()
 main = do
+
     let r1 = "RRRRRRRYYYYYYYB"
     drawRack r1
-    let s = solve r1
-    mapM_ print s
-    let Swap _ _ _ r2 = last s
+    let s1 = solve r1
+    mapM_ print s1
+
+    let r2 = rotateRackCw r1
     drawRack r2
+    let s2 = solve r2
+    mapM_ print s2
+
+    let r3 = rotateRackCcw r1
+    drawRack r3
+    let s3 = solve r3
+    mapM_ print s3
