@@ -1,4 +1,4 @@
-import Data.List (intersperse)
+import Data.List (intersperse, sortBy)
 import Data.Maybe (fromJust)
 
 type Rack = String
@@ -11,6 +11,11 @@ data Move
 
 type Solution = [Move]
 
+yellow, red, black :: Char
+yellow = 'Y'
+red = 'R'
+black = 'B'
+
 yellowIndices :: [Int]
 yellowIndices = [1,5,6,8,11,12,14]
 
@@ -22,38 +27,25 @@ blackIndices = [4]
 
 coloursToIndices :: [(Char,[Int])]
 coloursToIndices = [
-        ('Y', yellowIndices),
-        ('R', redIndices),
-        ('B', blackIndices)
+        (yellow, yellowIndices),
+        (red, redIndices),
+        (black, blackIndices)
     ]
 
 correctRack :: Rack
 correctRack = "RYRRBYYRYRRYYRY"
 
-isCorrectRack :: Rack -> Bool
-isCorrectRack = (==correctRack)
-
-isValidRack :: Rack -> Bool
-isValidRack r =
-    length r == 15 &&
-    numColour 'Y' 7 &&
-    numColour 'R' 7 &&
-    numColour 'B' 1
-    where
-        numColour c n = length (filter (==c) r) == n
-
-wrongness :: Rack -> [(Char,Int,[Int])]
-wrongness r =
-    map (\(idx, a, _) -> (a, idx, wrongIndices r a idx)) $
-    filter (\(_, a, b) -> a /= b) xs
+wrongnesses :: Rack -> [(Char,Int,[Int])]
+wrongnesses r =
+    sortBy (\(b1, _, _) (b2, _, _) -> b1 `compare` b2) $
+    map (\(idx, b, _) -> (b, idx, wrongIndices b)) $
+    filter (\(_, b1, b2) -> b1 /= b2) xs
     where
         xs = zip3 [0..] r correctRack
-
-wrongIndices :: Rack -> Char -> Int -> [Int]
-wrongIndices r c idx =
-    filter (\n -> r !! n /= c && n /= idx) idxs
-    where
-        idxs = fromJust $ lookup c coloursToIndices
+        wrongIndices b =
+            filter (\n -> r !! n /= b) idxs
+            where
+                idxs = fromJust $ lookup b coloursToIndices
 
 swapBalls :: Rack -> Int -> Int -> Rack
 swapBalls r idx1 idx2 =
@@ -65,24 +57,11 @@ swapBalls r idx1 idx2 =
         f n _ | n == idx2 = b1
         f _ b = b
 
-solve :: Rack -> Rack
+solve :: Rack -> Solution
 solve r =
-    loop r ws
+    reverse $ snd $ loop (r,[]) ws
     where
-        ws = wrongness r
-        loop :: Rack -> [(Char,Int,[Int])] -> Rack
-        loop r [] = r
-        loop r ((_, idx1, idx2:_):_) =
-            loop r2 ws2
-            where
-                r2 = swapBalls r idx1 idx2
-                ws2 = wrongness r2
-
-solve2 :: Rack -> [Move]
-solve2 r =
-    snd $ loop (r,[]) ws
-    where
-        ws = wrongness r
+        ws = wrongnesses r
         loop :: (Rack,[Move]) -> [(Char,Int,[Int])] -> (Rack,[Move])
         loop t [] = t
         loop (r1,ms) ((_, idx1, idx2:_):_) =
@@ -90,7 +69,7 @@ solve2 r =
             where
                 r2 = swapBalls r1 idx1 idx2
                 m = Swap idx1 idx2 r1 r2
-                ws2 = wrongness r2
+                ws2 = wrongnesses r2
 
 drawRack :: Rack -> IO ()
 drawRack r =
@@ -106,7 +85,9 @@ main :: IO ()
 main = do
     let r1 = "RRRRRRRYYYYYYYB"
     drawRack r1
-    let r2 = solve r1
-    drawRack r2
-    let ms = solve2 r1
-    mapM_ print $ reverse ms
+    let s = solve r1
+    mapM_ print $ s
+    let lastMove = last s
+    case lastMove of
+        Swap _ _ _ r2 -> drawRack r2
+        _ -> return  ()
