@@ -1,4 +1,4 @@
-import           Data.List  (intersperse, sortBy)
+import           Data.List  (intersperse, sortBy, minimumBy)
 import           Data.Maybe (fromJust)
 
 type Rack = String
@@ -50,16 +50,6 @@ swapBalls r idx1 idx2 =
 -- rotateRackCcw :: Rack -> Rack
 -- rotateRackCcw r = map (r!!) [14, 9, 13, 5, 8, 12, 2, 4, 7, 11, 0, 1, 3, 6, 10]
 
-drawRack :: Rack -> IO ()
-drawRack r =
-    mapM_ (putStrLn . renderLine) [0..4]
-    where
-        renderLine n =
-            padding ++ intersperse ' ' colours
-            where
-                padding = replicate (4 - n) ' '
-                colours = take (n + 1) $ drop (sum [1..n]) r
-
 wrongBalls :: Rack -> [(Char, Int, [Int])]
 wrongBalls r =
     sortBy (\(b1, _, _) (b2, _, _) -> b1 `compare` b2) $
@@ -85,8 +75,8 @@ search finished refine emptysoln =
             | Just soln <- finished partial = [soln]
             | otherwise  = concatMap generate $ refine partial
 
-solve3 :: Rack -> [Solution]
-solve3 r =
+solve :: Rack -> [Solution]
+solve r =
     search finished refine (r, [])
     where
         finished :: Partial -> Maybe Solution
@@ -111,21 +101,34 @@ solve3 r =
                                 m = Swap fromIdx toIdx r r'
                                 p' = (r', m:ms)
 
+printRack :: Rack -> IO ()
+printRack r =
+    mapM_ (putStrLn . renderLine) [0..4]
+    where
+        renderLine n =
+            padding ++ intersperse ' ' colours
+            where
+                padding = replicate (4 - n) ' '
+                colours = take (n + 1) $ drop (sum [1..n]) r
+
 printSolution :: Solution -> IO ()
 printSolution s = do
     mapM_ print s
-    putStrLn ""
 
 main :: IO ()
 main = do
     let r = "RRRRRRRYYYYYYYB"
-    drawRack r
+    printRack r
+    putStrLn ""
 
-    let ss = take 100 $ solve3 r
-    putStrLn $ show $ length ss
+    let ss = solve r
+    putStrLn $ "Num solutions: " ++ show (length ss)
+    putStrLn ""
 
-    let s = head ss
+    let s = minimumBy (\a b -> length a `compare` length b) ss
     printSolution s
+    putStrLn ""
 
     let Swap _ _ _ r2 = last s
-    drawRack r2
+    printRack r2
+    putStrLn ""
