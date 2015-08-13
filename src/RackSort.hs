@@ -35,75 +35,20 @@ coloursToIndices = [
 correctRack :: Rack
 correctRack = "RYRRBYYRYRRYYRY"
 
-wrongnesses :: Rack -> [(Char, Int, [Int])]
-wrongnesses r =
-    sortBy (\(b1, _, _) (b2, _, _) -> b1 `compare` b2) $
-    map (\(idx, b, _) -> (b, idx, destinationIndices b)) $
-    filter (\(_, b1, b2) -> b1 /= b2) xs
-    where
-        xs = zip3 [0..] r correctRack
-        destinationIndices b =
-            filter (\n -> r !! n /= b) correctIndices
-            where
-                correctIndices = fromJust $ lookup b coloursToIndices
-
 swapBalls :: Rack -> Int -> Int -> Rack
 swapBalls r idx1 idx2 =
     zipWith f [0..] r
     where
-        b1 = r !! idx1
-        b2 = r !! idx2
-        f n _ | n == idx1 = b2
-        f n _ | n == idx2 = b1
-        f _ b = b
+        f n b
+            | n == idx1 = r !! idx2
+            | n == idx2 = r !! idx1
+            | otherwise = b
 
-rotateRackCw :: Rack -> Rack
-rotateRackCw r = map (r!!) [10, 11, 6, 12, 7, 3, 13, 8, 4, 1, 14, 9, 5, 2, 0]
+-- rotateRackCw :: Rack -> Rack
+-- rotateRackCw r = map (r!!) [10, 11, 6, 12, 7, 3, 13, 8, 4, 1, 14, 9, 5, 2, 0]
 
-rotateRackCcw :: Rack -> Rack
-rotateRackCcw r = map (r!!) [14, 9, 13, 5, 8, 12, 2, 4, 7, 11, 0, 1, 3, 6, 10]
-
-solve :: Rack -> Solution
-solve r =
-    reverse $ snd $ loop (r, [])
-    where
-        loop :: (Rack, [Move]) -> (Rack, [Move])
-        loop t@(r1, ms) = case wrongnesses r1 of
-            ((_, idx1, idx2:_):_) ->
-                loop (r2, m:ms)
-                where
-                    r2 = swapBalls r1 idx1 idx2
-                    m = Swap idx1 idx2 r1 r2
-            _ -> t
-
-solve2 :: Rack -> Move -> Solution
-solve2 r initialMove =
-    reverse $ snd $ loop (r, [initialMove])
-    where
-        loop :: (Rack, [Move]) -> (Rack, [Move])
-        loop t@(r1, ms) = case wrongnesses r1 of
-            ((_, idx1, idx2:_):_) ->
-                loop (r2, m:ms)
-                where
-                    r2 = swapBalls r1 idx1 idx2
-                    m = Swap idx1 idx2 r1 r2
-            _ -> t
-
-uberSolve :: Rack -> [Solution]
-uberSolve r =
-    foldl outerOp [] ws
-    where
-        ws = wrongnesses r
-        outerOp :: [Solution] -> (Char, Int, [Int]) -> [Solution]
-        outerOp outerAcc (_, fromIdx, toIdxs) =
-            outerAcc ++ foldl innerOp [] toIdxs
-            where
-                innerOp :: [Solution] -> Int -> [Solution]
-                innerOp innerAcc toIdx =
-                    solve2 r' m : innerAcc
-                    where
-                        r' = swapBalls r fromIdx toIdx
-                        m = Swap fromIdx toIdx r r'
+-- rotateRackCcw :: Rack -> Rack
+-- rotateRackCcw r = map (r!!) [14, 9, 13, 5, 8, 12, 2, 4, 7, 11, 0, 1, 3, 6, 10]
 
 drawRack :: Rack -> IO ()
 drawRack r =
@@ -115,15 +60,19 @@ drawRack r =
                 padding = replicate (4 - n) ' '
                 colours = take (n + 1) $ drop (sum [1..n]) r
 
+wrongBalls :: Rack -> [(Char, Int, [Int])]
+wrongBalls r =
+    sortBy (\(b1, _, _) (b2, _, _) -> b1 `compare` b2) $
+    map (\(idx, b, _) -> (b, idx, availableIndices b)) $
+    filter (\(_, b1, b2) -> b1 /= b2) xs
+    where
+        xs = zip3 [0..] r correctRack
+        availableIndices b =
+            filter (\n -> r !! n /= b) correctIndices
+            where
+                correctIndices = fromJust $ lookup b coloursToIndices
+
 type Partial = (Rack, [Move])
-
-isPartialFinished :: Partial -> Maybe Solution
-isPartialFinished (r, ms)
-    | r == correctRack = Just ms
-    | otherwise = Nothing
-
-refinePartial :: (Partial -> [Partial])
-refinePartial p@(r, ms) = undefined
 
 search :: (Partial -> Maybe Solution)
         -> (Partial -> [Partial])
@@ -136,6 +85,32 @@ search finished refine emptysoln =
             | Just soln <- finished partial = [soln]
             | otherwise  = concatMap generate $ refine partial
 
+solve3 :: Rack -> [Solution]
+solve3 r =
+    search finished refine (r, [])
+    where
+        finished :: Partial -> Maybe Solution
+        finished (r, ms)
+            | r == correctRack = Just $ reverse ms
+            | otherwise = Nothing
+
+        refine :: (Partial -> [Partial])
+        refine p@(r, ms) =
+            foldl op1 [] ws
+            where
+                ws = wrongBalls r
+                op1 :: [Partial] -> (Char, Int, [Int]) -> [Partial]
+                op1 acc1 (_, fromIdx, toIdxs) =
+                    acc1 ++ foldl op2 [] toIdxs
+                    where
+                        op2 :: [Partial] -> Int -> [Partial]
+                        op2 acc2 toIdx =
+                            acc2 ++ [p']
+                            where
+                                r' = swapBalls r fromIdx toIdx
+                                m = Swap fromIdx toIdx r r'
+                                p' = (r', m:ms)
+
 printSolution :: Solution -> IO ()
 printSolution s = do
     mapM_ print s
@@ -144,5 +119,13 @@ printSolution s = do
 main :: IO ()
 main = do
     let r = "RRRRRRRYYYYYYYB"
-    let ss = uberSolve r
-    mapM_ printSolution ss
+    drawRack r
+
+    let ss = take 100 $ solve3 r
+    putStrLn $ show $ length ss
+
+    let s = head ss
+    printSolution s
+
+    let Swap _ _ _ r2 = last s
+    drawRack r2
