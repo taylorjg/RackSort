@@ -1,5 +1,5 @@
-import Data.List (intersperse, sortBy)
-import Data.Maybe (fromJust)
+import           Data.List  (intersperse, sortBy)
+import           Data.Maybe (fromJust)
 
 type Rack = String
 
@@ -17,15 +17,15 @@ red = 'R'
 black = 'B'
 
 yellowIndices :: [Int]
-yellowIndices = [1,5,6,8,11,12,14]
+yellowIndices = [1, 5, 6, 8, 11, 12, 14]
 
 redIndices :: [Int]
-redIndices = [0,2,3,7,9,10,13]
+redIndices = [0, 2, 3, 7, 9, 10, 13]
 
 blackIndices :: [Int]
 blackIndices = [4]
 
-coloursToIndices :: [(Char,[Int])]
+coloursToIndices :: [(Char, [Int])]
 coloursToIndices = [
         (yellow, yellowIndices),
         (red, redIndices),
@@ -35,7 +35,7 @@ coloursToIndices = [
 correctRack :: Rack
 correctRack = "RYRRBYYRYRRYYRY"
 
-wrongnesses :: Rack -> [(Char,Int,[Int])]
+wrongnesses :: Rack -> [(Char, Int, [Int])]
 wrongnesses r =
     sortBy (\(b1, _, _) (b2, _, _) -> b1 `compare` b2) $
     map (\(idx, b, _) -> (b, idx, destinationIndices b)) $
@@ -65,12 +65,12 @@ rotateRackCcw r = map (r!!) [14, 9, 13, 5, 8, 12, 2, 4, 7, 11, 0, 1, 3, 6, 10]
 
 solve :: Rack -> Solution
 solve r =
-    reverse $ snd $ loop (r,[])
+    reverse $ snd $ loop (r, [])
     where
-        loop :: (Rack,[Move]) -> (Rack,[Move])
-        loop t@(r1,ms) = case wrongnesses r1 of
+        loop :: (Rack, [Move]) -> (Rack, [Move])
+        loop t@(r1, ms) = case wrongnesses r1 of
             ((_, idx1, idx2:_):_) ->
-                loop (r2,m:ms)
+                loop (r2, m:ms)
                 where
                     r2 = swapBalls r1 idx1 idx2
                     m = Swap idx1 idx2 r1 r2
@@ -78,12 +78,12 @@ solve r =
 
 solve2 :: Rack -> Move -> Solution
 solve2 r initialMove =
-    reverse $ snd $ loop (r,[initialMove])
+    reverse $ snd $ loop (r, [initialMove])
     where
-        loop :: (Rack,[Move]) -> (Rack,[Move])
-        loop t@(r1,ms) = case wrongnesses r1 of
+        loop :: (Rack, [Move]) -> (Rack, [Move])
+        loop t@(r1, ms) = case wrongnesses r1 of
             ((_, idx1, idx2:_):_) ->
-                loop (r2,m:ms)
+                loop (r2, m:ms)
                 where
                     r2 = swapBalls r1 idx1 idx2
                     m = Swap idx1 idx2 r1 r2
@@ -94,7 +94,7 @@ uberSolve r =
     foldl outerOp [] ws
     where
         ws = wrongnesses r
-        outerOp :: [Solution] -> (Char,Int,[Int]) -> [Solution]
+        outerOp :: [Solution] -> (Char, Int, [Int]) -> [Solution]
         outerOp outerAcc (_, fromIdx, toIdxs) =
             outerAcc ++ foldl innerOp [] toIdxs
             where
@@ -115,6 +115,27 @@ drawRack r =
                 padding = replicate (4 - n) ' '
                 colours = take (n + 1) $ drop (sum [1..n]) r
 
+type Partial = (Rack, [Move])
+
+isPartialFinished :: Partial -> Maybe Solution
+isPartialFinished (r, ms)
+    | r == correctRack = Just ms
+    | otherwise = Nothing
+
+refinePartial :: (Partial -> [Partial])
+refinePartial p@(r, ms) = undefined
+
+search :: (Partial -> Maybe Solution)
+        -> (Partial -> [Partial])
+        -> Partial
+        -> [Solution]
+search finished refine emptysoln =
+    generate emptysoln
+    where
+        generate partial
+            | Just soln <- finished partial = [soln]
+            | otherwise  = concatMap generate $ refine partial
+
 printSolution :: Solution -> IO ()
 printSolution s = do
     mapM_ print s
@@ -122,6 +143,6 @@ printSolution s = do
 
 main :: IO ()
 main = do
-    let r1 = "RRRRRRRYYYYYYYB"
-    let ss = uberSolve r1
+    let r = "RRRRRRRYYYYYYYB"
+    let ss = uberSolve r
     mapM_ printSolution ss
