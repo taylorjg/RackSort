@@ -5,8 +5,8 @@ type Rack = String
 
 data Move
     = Swap Int Int Rack Rack
-    -- | RotateCw Rack Rack
-    -- | RotateCcw Rack Rack
+    | RotateCw Rack Rack
+    | RotateCcw Rack Rack
     deriving Show
 
 type Solution = [Move]
@@ -80,8 +80,8 @@ solve r =
     search finished refine (r, [])
     where
         finished :: Partial -> Maybe Solution
-        finished (r, ms)
-            | r == correctRack = Just $ reverse ms
+        finished (r1, ms)
+            | r1 == correctRack = Just $ reverse ms
             | otherwise = Nothing
 
         pickBestOrientation :: Rack -> (Rack, [(Char, Int, [Int])], Maybe Move)
@@ -90,8 +90,8 @@ solve r =
                 r2 = rotateRackCw r1
                 r3 = rotateRackCcw r1
                 res1 = (r1, wrongBalls r1, Nothing)
-                res2 = (r2, wrongBalls r2, Nothing)
-                res3 = (r3, wrongBalls r3, Nothing)
+                res2 = (r2, wrongBalls r2, Just $ RotateCw r1 r2)
+                res3 = (r3, wrongBalls r3, Just $ RotateCcw r1 r2)
                 res = minimumBy (\(_, w1, _) (_, w2, _) -> length w1 `compare` length w2) $
                     [res1, res2, res3]
 
@@ -99,7 +99,10 @@ solve r =
         refine (r1, ms) =
             foldl op1 [] bestw
             where
-                (bestr, bestw, _) = pickBestOrientation r1
+                (bestr, bestw, mm) = pickBestOrientation r1
+                ms' = case mm of
+                    Just rm -> rm:ms
+                    _ -> ms
                 op1 :: [Partial] -> (Char, Int, [Int]) -> [Partial]
                 op1 acc1 (_, fromIdx, toIdxs) =
                     acc1 ++ foldl op2 [] toIdxs
@@ -110,7 +113,7 @@ solve r =
                             where
                                 r' = swapBalls bestr fromIdx toIdx
                                 m = Swap fromIdx toIdx bestr r'
-                                p' = (r', m:ms)
+                                p' = (r', m:ms')
 
 printRack :: Rack -> IO ()
 printRack r =
