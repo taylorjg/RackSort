@@ -1,4 +1,4 @@
-import           Data.List  (intersperse, sortBy, minimumBy)
+import           Data.List  (intersperse, minimumBy)
 import           Data.Maybe (fromJust, maybeToList)
 
 type Rack = String
@@ -50,17 +50,16 @@ rotateRackCw r = map (r!!) [10, 11, 6, 12, 7, 3, 13, 8, 4, 1, 14, 9, 5, 2, 0]
 rotateRackCcw :: Rack -> Rack
 rotateRackCcw r = map (r!!) [14, 9, 13, 5, 8, 12, 2, 4, 7, 11, 0, 1, 3, 6, 10]
 
-wrongBalls :: Rack -> [(Char, Int, [Int])]
+wrongBalls :: Rack -> [(Int, [Int])]
 wrongBalls r =
-    sortBy (\(b1, _, _) (b2, _, _) -> b1 `compare` b2) $
-    map (\(idx, b, _) -> (b, idx, availableIndices b)) $
+    map (\(fromIdx, b, _) -> (fromIdx, toIdxs b)) $
     filter (\(_, b1, b2) -> b1 /= b2) xs
     where
         xs = zip3 [0..] r correctRack
-        availableIndices b =
-            filter (\n -> r !! n /= b) correctIndices
+        toIdxs b =
+            filter (\n -> r !! n /= b) idxs
             where
-                correctIndices = fromJust $ lookup b coloursToIndices
+                idxs = fromJust $ lookup b coloursToIndices
 
 type Partial = (Rack, [Move])
 
@@ -73,7 +72,7 @@ search finished refine emptysoln =
     where
         generate partial
             | Just soln <- finished partial = [soln]
-            | otherwise  = concatMap generate $ refine partial
+            | otherwise  = concatMap generate (refine partial)
 
 solve :: Rack -> [Solution]
 solve r =
@@ -81,10 +80,10 @@ solve r =
     where
         finished :: Partial -> Maybe Solution
         finished (r1, ms)
-            | r1 == correctRack = Just $ reverse ms
+            | r1 == correctRack = Just (reverse ms)
             | otherwise = Nothing
 
-        pickBestOrientation :: Rack -> (Rack, [(Char, Int, [Int])], Maybe Move)
+        pickBestOrientation :: Rack -> (Rack, [(Int, [Int])], Maybe Move)
         pickBestOrientation r1 = res
             where
                 r2 = rotateRackCw r1
@@ -101,8 +100,8 @@ solve r =
             where
                 (bestr, bestw, mm) = pickBestOrientation r1
                 ms' = (maybeToList mm) ++ ms
-                op1 :: [Partial] -> (Char, Int, [Int]) -> [Partial]
-                op1 acc1 (_, fromIdx, toIdxs) =
+                op1 :: [Partial] -> (Int, [Int]) -> [Partial]
+                op1 acc1 (fromIdx, toIdxs) =
                     acc1 ++ foldl op2 [] toIdxs
                     where
                         op2 :: [Partial] -> Int -> [Partial]
