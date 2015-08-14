@@ -91,9 +91,9 @@ solve r =
                 r3 = rotateRackCcw r1
                 res1 = (r1, wrongBalls r1, Nothing)
                 res2 = (r2, wrongBalls r2, Just $ RotateCw r1 r2)
-                res3 = (r3, wrongBalls r3, Just $ RotateCcw r1 r2)
-                res = minimumBy (\(_, w1, _) (_, w2, _) -> length w1 `compare` length w2) $
-                    [res1, res2, res3]
+                res3 = (r3, wrongBalls r3, Just $ RotateCcw r1 r3)
+                res = minimumBy f [res1, res2, res3]
+                f (_, w1, _) (_, w2, _) = length w1 `compare` length w2
 
         refine :: (Partial -> [Partial])
         refine (r1, ms) =
@@ -113,34 +113,64 @@ solve r =
                                 m = Swap fromIdx toIdx bestr r'
                                 p' = (r', m:ms')
 
-printRack :: Rack -> IO ()
-printRack r =
-    mapM_ (putStrLn . renderLine) [0..4]
+renderRack :: Rack -> [String]
+renderRack r =
+    map renderLine [0..4]
     where
         renderLine n =
-            padding ++ intersperse ' ' colours
+            padding ++ intersperse ' ' colours ++ padding
             where
                 padding = replicate (4 - n) ' '
                 colours = take (n + 1) $ drop (sum [1..n]) r
 
+printBeforeAndAfterRacks :: Rack -> Rack -> IO ()
+printBeforeAndAfterRacks fromRack toRack = do
+    mapM_ putStrLn combinedLines
+    where
+        combinedLines = combineLines [
+                (renderRack fromRack),
+                divider,
+                (renderRack toRack)
+            ]
+        divider = [
+                replicate 10 ' ',
+                replicate 10 ' ',
+                replicate 4 ' ' ++ "=>" ++ replicate 4 ' ',
+                replicate 10 ' ',
+                replicate 10 ' '
+            ]
+        combineLines liness =
+            loop liness (replicate 5 "")
+            where
+                loop [] ls = ls
+                loop (xs:xss) ls = loop xss (zipWith (++) ls xs)
+
+printMove :: Move -> IO ()
+printMove (Swap fromIdx toIdx fromRack toRack) = do
+    putStrLn $ "Swap index " ++ show fromIdx ++ " with " ++ show toIdx
+    printBeforeAndAfterRacks fromRack toRack
+    putStrLn $ replicate 28 '-'
+
+printMove (RotateCw fromRack toRack) = do
+    putStrLn "Rotate rack clockwise"
+    printBeforeAndAfterRacks fromRack toRack
+    putStrLn $ replicate 28 '-'
+
+printMove (RotateCcw fromRack toRack) = do
+    putStrLn "Rotate rack counter clockwise"
+    printBeforeAndAfterRacks fromRack toRack
+    putStrLn $ replicate 28 '-'
+
 printSolution :: Solution -> IO ()
 printSolution s = do
-    mapM_ print s
+    putStrLn $ replicate 28 '-'
+    mapM_ printMove s
 
 main :: IO ()
 main = do
     let r = "RRRRRRRYYYYYYYB"
-    printRack r
-    putStrLn ""
-
     let ss = solve r
     putStrLn $ "Num solutions: " ++ show (length ss)
     putStrLn ""
-
     let s = minimumBy (\s1 s2 -> length s1 `compare` length s2) ss
     printSolution s
-    putStrLn ""
-
-    let Swap _ _ _ r2 = last s
-    printRack r2
-    putStrLn ""
