@@ -1,5 +1,5 @@
 import           Data.List  (intersperse, sortBy, minimumBy)
-import           Data.Maybe (fromJust)
+import           Data.Maybe (fromJust, maybeToList)
 
 type Rack = String
 
@@ -100,9 +100,7 @@ solve r =
             foldl op1 [] bestw
             where
                 (bestr, bestw, mm) = pickBestOrientation r1
-                ms' = case mm of
-                    Just rm -> rm:ms
-                    _ -> ms
+                ms' = (maybeToList mm) ++ ms
                 op1 :: [Partial] -> (Char, Int, [Int]) -> [Partial]
                 op1 acc1 (_, fromIdx, toIdxs) =
                     acc1 ++ foldl op2 [] toIdxs
