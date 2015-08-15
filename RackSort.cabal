@@ -8,5 +8,5 @@ cabal-version:       >= 1.10
 executable RackSort
     hs-source-dirs:     src
     Main-Is:            RackSort.hs
-    build-depends:      base >=4.7 && <4.8
+    build-depends:      base >=4.7 && <4.8, ansi-terminal
     default-language:   Haskell2010

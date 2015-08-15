@@ -1,5 +1,7 @@
-import           Data.List  (intersperse, minimumBy)
-import           Data.Maybe (fromJust, maybeToList)
+import           Data.Char           (toLower)
+import           Data.List           (intersperse, minimumBy)
+import           Data.Maybe          (fromJust, maybeToList)
+import           System.Console.ANSI
 
 type Rack = String
 
@@ -112,24 +114,30 @@ solve r =
                                 m = Swap fromIdx toIdx bestr r'
                                 p' = (r', m:ms')
 
-renderRack :: Rack -> [String]
-renderRack r =
+renderRack :: Rack -> [Int] -> [String]
+renderRack r highlightIdxs =
     map renderLine [0..4]
     where
         renderLine n =
-            padding ++ intersperse ' ' colours ++ padding
+            padding ++ concat (intersperse " " colours) ++ padding
             where
                 padding = replicate (4 - n) ' '
-                colours = take (n + 1) $ drop (sum [1..n]) r
+                idxs = take (n + 1) $ drop (sum [1..n]) [0..14]
+                colours = map getColour idxs
+                getColour idx
+                    | idx `elem` highlightIdxs = ['`', colour, '`']
+                    | otherwise = [colour]
+                    where
+                        colour = r !! idx
 
-printBeforeAndAfterRacks :: Rack -> Rack -> IO ()
-printBeforeAndAfterRacks fromRack toRack = do
+printBeforeAndAfterRacks :: Rack -> Rack -> [Int] -> IO ()
+printBeforeAndAfterRacks fromRack toRack highlightIdxs = do
     mapM_ putStrLn combinedLines
     where
         combinedLines = combineLines [
-                (renderRack fromRack),
+                (renderRack fromRack highlightIdxs),
                 divider,
-                (renderRack toRack)
+                (renderRack toRack highlightIdxs)
             ]
         divider = [
                 replicate 10 ' ',
@@ -147,17 +155,17 @@ printBeforeAndAfterRacks fromRack toRack = do
 printMove :: Move -> IO ()
 printMove (Swap fromIdx toIdx fromRack toRack) = do
     putStrLn $ "Swap index " ++ show fromIdx ++ " with " ++ show toIdx
-    printBeforeAndAfterRacks fromRack toRack
+    printBeforeAndAfterRacks fromRack toRack [fromIdx, toIdx]
     putStrLn $ replicate 28 '-'
 
 printMove (RotateCw fromRack toRack) = do
     putStrLn "Rotate rack clockwise"
-    printBeforeAndAfterRacks fromRack toRack
+    printBeforeAndAfterRacks fromRack toRack []
     putStrLn $ replicate 28 '-'
 
 printMove (RotateCcw fromRack toRack) = do
     putStrLn "Rotate rack counter clockwise"
-    printBeforeAndAfterRacks fromRack toRack
+    printBeforeAndAfterRacks fromRack toRack []
     putStrLn $ replicate 28 '-'
 
 printSolution :: Solution -> IO ()
@@ -173,3 +181,9 @@ main = do
     putStrLn ""
     let s = minimumBy (\s1 s2 -> length s1 `compare` length s2) ss
     printSolution s
+
+    -- putStr "Regular text "
+    -- setSGR [ SetColor Foreground Vivid Yellow ]
+    -- putStr "(highlight text)"
+    -- setSGR [ SetColor Foreground Dull White ]
+    -- putStrLn " more regular text "
