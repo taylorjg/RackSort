@@ -1,4 +1,3 @@
-import           Data.Char           (toLower)
 import           Data.List           (intersperse, minimumBy)
 import           Data.List.Split     (splitOn)
 import           Data.Maybe          (fromJust, maybeToList)
@@ -204,9 +203,3 @@ main = do
     putStrLn ""
     let s = minimumBy (\s1 s2 -> length s1 `compare` length s2) ss
     printSolution s
-
-    -- putStr "Regular text "
-    -- setSGR [ SetColor Foreground Vivid Yellow ]
-    -- putStr "(highlight text)"
-    -- setSGR [ SetColor Foreground Dull White ]
-    -- putStrLn " more regular text "
