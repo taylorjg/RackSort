@@ -1,5 +1,6 @@
 import           Data.Char           (toLower)
 import           Data.List           (intersperse, minimumBy)
+import           Data.List.Split     (splitOn)
 import           Data.Maybe          (fromJust, maybeToList)
 import           System.Console.ANSI
 
@@ -130,9 +131,31 @@ renderRack r highlightIdxs =
                     where
                         colour = r !! idx
 
+putStrLnWithHighlights :: String -> IO ()
+putStrLnWithHighlights = writeTextSegments . lineToTextSegments
+    where
+        writeTextSegments textSegments = do
+            mapM_ (\(ts, w) -> w ts) categorisedTextSegments
+            putStrLn ""
+            where
+                categorisedTextSegments = categoriseTextSegments textSegments
+        lineToTextSegments line = splitOn "`" line
+        categoriseTextSegments textSegments =
+            map (\(ts, idx) -> (ts, chooseWriter idx)) $ zip textSegments [0..]
+            where
+                chooseWriter :: Int -> String -> IO ()
+                chooseWriter n
+                    | even n = normalWriter
+                    | otherwise = highlightingWriter
+        normalWriter ts = putStr ts
+        highlightingWriter ts = do
+            setSGR [ SetColor Foreground Vivid Yellow ]
+            putStr ts
+            setSGR [ SetColor Foreground Dull White ]
+
 printBeforeAndAfterRacks :: Rack -> Rack -> [Int] -> IO ()
 printBeforeAndAfterRacks fromRack toRack highlightIdxs = do
-    mapM_ putStrLn combinedLines
+    mapM_ putStrLnWithHighlights combinedLines
     where
         combinedLines = combineLines [
                 (renderRack fromRack highlightIdxs),
