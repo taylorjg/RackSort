@@ -3,7 +3,9 @@ module RackSortLib (
     Move(..),
     Solution,
     solve,
-    correctRack
+    correctRack,
+    rotateRackCw,
+    rotateRackCcw
 ) where
 
 import           Data.List  (minimumBy)
