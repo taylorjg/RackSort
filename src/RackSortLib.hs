@@ -4,6 +4,7 @@ module RackSortLib (
     Solution,
     solve,
     correctRack,
+    swapBalls,
     rotateRackCw,
     rotateRackCcw
 ) where
