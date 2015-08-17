@@ -9,7 +9,7 @@ module RackSortLib (
 ) where
 
 import           Data.List  (minimumBy)
-import           Data.Maybe (fromJust, maybeToList)
+import           Data.Maybe (fromJust)
 
 type Rack = String
 
@@ -93,23 +93,22 @@ solve r =
             | r1 == correctRack = Just (reverse ms)
             | otherwise = Nothing
 
-        pickBestOrientation :: Rack -> (Rack, [(Int, [Int])], Maybe Move)
+        pickBestOrientation :: Rack -> (Rack, [(Int, [Int])], [Partial])
         pickBestOrientation r1 = res
             where
                 r2 = rotateRackCw r1
                 r3 = rotateRackCcw r1
-                res1 = (r1, wrongBalls r1, Nothing)
-                res2 = (r2, wrongBalls r2, Just $ RotateCw r1 r2)
-                res3 = (r3, wrongBalls r3, Just $ RotateCcw r1 r3)
+                res1 = (r1, wrongBalls r1, [])
+                res2 = (r2, wrongBalls r2, [(r2, [RotateCw r1 r2])])
+                res3 = (r3, wrongBalls r3, [(r3, [RotateCcw r1 r3])])
                 res = minimumBy f [res1, res2, res3]
                 f (_, w1, _) (_, w2, _) = length w1 `compare` length w2
 
         refine :: (Partial -> [Partial])
         refine (r1, ms) =
-            foldl op1 [] bestw
+            foldl op1 ps bestw
             where
-                (bestr, bestw, mm) = pickBestOrientation r1
-                ms' = (maybeToList mm) ++ ms
+                (bestr, bestw, ps) = pickBestOrientation r1
                 op1 :: [Partial] -> (Int, [Int]) -> [Partial]
                 op1 acc1 (fromIdx, toIdxs) =
                     acc1 ++ foldl op2 [] toIdxs
@@ -120,4 +119,4 @@ solve r =
                             where
                                 r' = swapBalls bestr fromIdx toIdx
                                 m = Swap fromIdx toIdx bestr r'
-                                p' = (r', m:ms')
+                                p' = (r', m:ms)

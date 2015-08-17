@@ -28,14 +28,14 @@ testRotateRackCcw = TestCase $ do
 
 testSolvingCorrectRack :: Test
 testSolvingCorrectRack = TestCase $ do
-    assertEqual "" expected actual
+    assertEqual "solving correct rack yields a single solution with no moves" expected actual
     where
         actual = solve correctRack
         expected = [[]]
 
 testSolvingCorrectRackRotatedCw :: Test
 testSolvingCorrectRackRotatedCw = TestCase $ do
-    assertEqual "" expected actual
+    assertEqual "solving correct rack rotated clockwise yields a single solution with one move" expected actual
     where
         r = rotateRackCw correctRack
         actual = solve r
@@ -43,7 +43,7 @@ testSolvingCorrectRackRotatedCw = TestCase $ do
 
 testSolvingCorrectRackRotatedCcw :: Test
 testSolvingCorrectRackRotatedCcw = TestCase $ do
-    assertEqual "" expected actual
+    assertEqual "solving correct rack rotated counter clockwise yields a single solution with one move" expected actual
     where
         r = rotateRackCcw correctRack
         actual = solve r

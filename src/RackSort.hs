@@ -5,7 +5,6 @@ import           Data.List        (minimumBy)
 main :: IO ()
 main = do
     let r = "RRRRRRRYYYYYYYB"
-    -- let r = rotateRackCw correctRack
     let ss = solve r
     putStrLn $ "Num solutions: " ++ show (length ss)
     putStrLn ""
