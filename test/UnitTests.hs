@@ -9,10 +9,10 @@ import System.Exit (exitFailure)
 -- k l m n o    o j f c a
 testRotateRackCw :: Test
 testRotateRackCw = TestCase $ do
-    assertEqual "rotate rack clockwise is correct" r2 (rotateRackCw r1)
+    assertEqual "rotateRackCw works correctly" expected actual
     where
-        r1 = "abcdefghijklmno"
-        r2 = "klgmhdniebojfca"
+        actual = rotateRackCw "abcdefghijklmno"
+        expected = "klgmhdniebojfca"
 
 --     a            o
 --    b c          j n
@@ -21,15 +21,41 @@ testRotateRackCw = TestCase $ do
 -- k l m n o    a b d g k
 testRotateRackCcw :: Test
 testRotateRackCcw = TestCase $ do
-    assertEqual "rotate rack counter clockwise is correct" r2 (rotateRackCcw r1)
+    assertEqual "rotateRackCcw works correctly" expected actual
     where
-        r1 = "abcdefghijklmno"
-        r2 = "ojnfimcehlabdgk"
+        actual = rotateRackCcw "abcdefghijklmno"
+        expected = "ojnfimcehlabdgk"
+
+testSolvingCorrectRack :: Test
+testSolvingCorrectRack = TestCase $ do
+    assertEqual "" expected actual
+    where
+        actual = solve correctRack
+        expected = [[]]
+
+testSolvingCorrectRackRotatedCw :: Test
+testSolvingCorrectRackRotatedCw = TestCase $ do
+    assertEqual "" expected actual
+    where
+        r = rotateRackCw correctRack
+        actual = solve r
+        expected = [[RotateCcw r correctRack]]
+
+testSolvingCorrectRackRotatedCcw :: Test
+testSolvingCorrectRackRotatedCcw = TestCase $ do
+    assertEqual "" expected actual
+    where
+        r = rotateRackCcw correctRack
+        actual = solve r
+        expected = [[RotateCw r correctRack]]
 
 tests :: Test
 tests = TestList [
     TestLabel "testRotateRackCw" testRotateRackCw,
-    TestLabel "testRotateRackCcw" testRotateRackCcw
+    TestLabel "testRotateRackCcw" testRotateRackCcw,
+    TestLabel "testSolvingCorrectRack" testSolvingCorrectRack,
+    TestLabel "testSolvingCorrectRackRotatedCw" testSolvingCorrectRackRotatedCw,
+    TestLabel "testSolvingCorrectRackRotatedCcw" testSolvingCorrectRackRotatedCcw
     ]
 
 main :: IO ()

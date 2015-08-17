@@ -17,7 +17,7 @@ data Move
     = Swap Int Int Rack Rack
     | RotateCw Rack Rack
     | RotateCcw Rack Rack
-    deriving Show
+    deriving (Show, Eq)
 
 type Solution = [Move]
 
