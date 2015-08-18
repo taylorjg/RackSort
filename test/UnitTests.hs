@@ -26,6 +26,20 @@ testRotateRackCcw = TestCase $ do
         actual = rotateRackCcw "abcdefghijklmno"
         expected = "ojnfimcehlabdgk"
 
+testRotateRackCwThreeTimes :: Test
+testRotateRackCwThreeTimes = TestCase $ do
+    assertEqual "rotateRackCw three times gets back to original" expected actual
+    where
+        actual = rotateRackCw $ rotateRackCw $ rotateRackCw "abcdefghijklmno"
+        expected = "abcdefghijklmno"
+
+testRotateRackCcwThreeTimes :: Test
+testRotateRackCcwThreeTimes = TestCase $ do
+    assertEqual "rotateRackCcw three times gets back to original" expected actual
+    where
+        actual = rotateRackCcw $ rotateRackCcw $ rotateRackCcw "abcdefghijklmno"
+        expected = "abcdefghijklmno"
+
 testSolvingCorrectRack :: Test
 testSolvingCorrectRack = TestCase $ do
     assertEqual "solving correct rack yields a single solution with no moves" expected actual
@@ -53,6 +67,8 @@ tests :: Test
 tests = TestList [
     TestLabel "testRotateRackCw" testRotateRackCw,
     TestLabel "testRotateRackCcw" testRotateRackCcw,
+    TestLabel "testRotateRackCwThreeTimes" testRotateRackCwThreeTimes,
+    TestLabel "testRotateRackCcwThreeTimes" testRotateRackCcwThreeTimes,
     TestLabel "testSolvingCorrectRack" testSolvingCorrectRack,
     TestLabel "testSolvingCorrectRackRotatedCw" testSolvingCorrectRackRotatedCw,
     TestLabel "testSolvingCorrectRackRotatedCcw" testSolvingCorrectRackRotatedCcw

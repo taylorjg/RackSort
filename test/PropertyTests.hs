@@ -71,12 +71,23 @@ genRackWrapper = do
 instance Arbitrary RackWrapper where
     arbitrary = genRackWrapper
 
-prop_DummyTest :: RackWrapper -> MoveMakersWrapper -> Bool
-prop_DummyTest (RW r) (MMW _) = head r /= 'B'
+-- prop_example :: RackWrapper -> MoveMakersWrapper -> Bool
+-- prop_example (RW r) (MMW mms) = undefined
+
+prop_rotateCwThreeTimes :: RackWrapper -> Bool
+prop_rotateCwThreeTimes (RW r) =
+    r == (rotateRackCw $ rotateRackCw $ rotateRackCw r)
+
+prop_rotateCcwThreeTimes :: RackWrapper -> Bool
+prop_rotateCcwThreeTimes (RW r) =
+    r == (rotateRackCcw $ rotateRackCcw $ rotateRackCcw r)
 
 main :: IO ()
 main = do
-    r1 <- quickCheckResult $ noShrinking prop_DummyTest
-    if all isSuccess [r1]
+    results <- mapM quickCheckResult [
+            prop_rotateCwThreeTimes,
+            prop_rotateCcwThreeTimes
+        ]
+    if all isSuccess results
         then return ()
         else exitFailure
