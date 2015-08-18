@@ -75,18 +75,24 @@ instance Arbitrary RackWrapper where
 -- prop_example (RW r) (MMW mms) = undefined
 
 prop_rotateCwThreeTimes :: RackWrapper -> Bool
-prop_rotateCwThreeTimes (RW r) =
-    r == (rotateRackCw $ rotateRackCw $ rotateRackCw r)
+prop_rotateCwThreeTimes (RW r) = r == (rotateRackCw $ rotateRackCw $ rotateRackCw r)
 
 prop_rotateCcwThreeTimes :: RackWrapper -> Bool
-prop_rotateCcwThreeTimes (RW r) =
-    r == (rotateRackCcw $ rotateRackCcw $ rotateRackCcw r)
+prop_rotateCcwThreeTimes (RW r) = r == (rotateRackCcw $ rotateRackCcw $ rotateRackCcw r)
+
+prop_rotateCwThenCcw :: RackWrapper -> Bool
+prop_rotateCwThenCcw (RW r) = r == (rotateRackCcw $ rotateRackCw r)
+
+prop_rotateCcwThenCw :: RackWrapper -> Bool
+prop_rotateCcwThenCw (RW r) = r == (rotateRackCw $ rotateRackCcw r)
 
 main :: IO ()
 main = do
     results <- mapM quickCheckResult [
             prop_rotateCwThreeTimes,
-            prop_rotateCcwThreeTimes
+            prop_rotateCcwThreeTimes,
+            prop_rotateCwThenCcw,
+            prop_rotateCcwThenCw
         ]
     if all isSuccess results
         then return ()
