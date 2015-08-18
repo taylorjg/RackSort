@@ -1,7 +1,6 @@
-{-# LANGUAGE FlexibleInstances #-}
-
+import           Data.Maybe           (maybeToList)
 import           RackSortLib
-import           System.Exit     (exitFailure)
+import           System.Exit          (exitFailure)
 import           Test.QuickCheck
 import           Test.QuickCheck.Test
 
@@ -40,49 +39,40 @@ applyMoveMakers r mms =
                 r' = rotateRackCcw r
                 m = RotateCcw r r'
 
-genMoveMakers :: Gen [MoveMaker]
-genMoveMakers = do
-    -- TODO: ideally, optional RotateCw/RotateCcw followed by some Swap
-    numMoves <- choose (1, 6)
-    vectorOf numMoves genMoveMaker
+newtype MoveMakersWrapper = MMW [MoveMaker] deriving Show
 
-genMoveMaker :: Gen MoveMaker
-genMoveMaker = frequency [
-        (10, genSwap),
-        (1, genRotateCw),
-        (1, genRotateCcw)
-    ]
+genMoveMakers :: Gen MoveMakersWrapper
+genMoveMakers = do
+    maybeRotate <- frequency [
+            (1, return Nothing),
+            (1, return $ Just RotateCwMaker),
+            (1, return $ Just RotateCcwMaker)
+        ]
+    numSwaps <- choose (1, 5)
+    swaps <- vectorOf numSwaps genSwap
+    return (MMW $ (maybeToList maybeRotate) ++ swaps)
 
 genSwap :: Gen MoveMaker
 genSwap = do
     fromIdx <- elements [0..14]
     toIdx <- elements $ filter (/=fromIdx) [0..14]
-    return $ SwapMaker fromIdx toIdx
+    return (SwapMaker fromIdx toIdx)
 
-genRotateCw :: Gen MoveMaker
-genRotateCw = return RotateCwMaker
-
-genRotateCcw :: Gen MoveMaker
-genRotateCcw = return RotateCcwMaker
-
-instance Arbitrary MoveMaker where
-    arbitrary = genMoveMaker
-
-instance Arbitrary [MoveMaker] where
+instance Arbitrary MoveMakersWrapper where
     arbitrary = genMoveMakers
 
-newtype RackWrapper = RackWrapper Rack deriving Show
+newtype RackWrapper = RW Rack deriving Show
 
 genRackWrapper :: Gen RackWrapper
 genRackWrapper = do
     r <- shuffle correctRack
-    return (RackWrapper r)
+    return (RW r)
 
 instance Arbitrary RackWrapper where
     arbitrary = genRackWrapper
 
-prop_DummyTest :: RackWrapper -> [MoveMaker] -> Bool
-prop_DummyTest (RackWrapper r) _ = head r /= 'B'
+prop_DummyTest :: RackWrapper -> MoveMakersWrapper -> Bool
+prop_DummyTest (RW r) (MMW _) = head r /= 'B'
 
 main :: IO ()
 main = do
