@@ -1,6 +1,9 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 import           RackSortLib
 import           System.Exit     (exitFailure)
 import           Test.QuickCheck
+import           Test.QuickCheck.Test
 
 oppositeMoves :: [Move] -> [Move]
 oppositeMoves ms = reverse $ map oppositeMove ms
@@ -14,6 +17,7 @@ data MoveMaker
     = SwapMaker Int Int
     | RotateCwMaker
     | RotateCcwMaker
+    deriving Show
 
 applyMoveMakers :: Rack -> [MoveMaker] -> (Rack, [Move])
 applyMoveMakers r mms =
@@ -38,11 +42,16 @@ applyMoveMakers r mms =
 
 genMoveMakers :: Gen [MoveMaker]
 genMoveMakers = do
-    numMoves <- choose (1, 10)
+    -- TODO: ideally, optional RotateCw/RotateCcw followed by some Swap
+    numMoves <- choose (1, 6)
     vectorOf numMoves genMoveMaker
 
 genMoveMaker :: Gen MoveMaker
-genMoveMaker = oneof [genSwap, genRotateCw, genRotateCcw]
+genMoveMaker = frequency [
+        (10, genSwap),
+        (1, genRotateCw),
+        (1, genRotateCcw)
+    ]
 
 genSwap :: Gen MoveMaker
 genSwap = do
@@ -56,9 +65,28 @@ genRotateCw = return RotateCwMaker
 genRotateCcw :: Gen MoveMaker
 genRotateCcw = return RotateCcwMaker
 
-genRack :: Gen Rack
-genRack = undefined
+instance Arbitrary MoveMaker where
+    arbitrary = genMoveMaker
+
+instance Arbitrary [MoveMaker] where
+    arbitrary = genMoveMakers
+
+newtype RackWrapper = RackWrapper Rack deriving Show
+
+genRackWrapper :: Gen RackWrapper
+genRackWrapper = do
+    r <- shuffle correctRack
+    return (RackWrapper r)
+
+instance Arbitrary RackWrapper where
+    arbitrary = genRackWrapper
+
+prop_DummyTest :: RackWrapper -> [MoveMaker] -> Bool
+prop_DummyTest (RackWrapper r) _ = head r /= 'B'
 
 main :: IO ()
 main = do
-    return ()
+    r1 <- quickCheckResult $ noShrinking prop_DummyTest
+    if all isSuccess [r1]
+        then return ()
+        else exitFailure
