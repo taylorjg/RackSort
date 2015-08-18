@@ -1,3 +1,4 @@
+import           Control.Arrow        (second)
 import           Data.Maybe           (maybeToList)
 import           RackSortLib
 import           System.Exit          (exitFailure)
@@ -18,26 +19,21 @@ data MoveMaker
     | RotateCcwMaker
     deriving Show
 
-applyMoveMakers :: Rack -> [MoveMaker] -> (Rack, [Move])
-applyMoveMakers r mms =
-    (a, reverse b)
+applyMoveMakers :: [MoveMaker] -> Rack -> (Rack, [Move])
+applyMoveMakers mms r = second reverse $ foldl op (r, []) mms
     where
-        (a, b) = foldl op (r, []) mms
-        op (r, ms) (SwapMaker fromIdx toIdx) =
-            (r', m:ms)
+        op (r1, ms) (SwapMaker fromIdx toIdx) = (r2, m:ms)
             where
-                r' = swapBalls r fromIdx toIdx
-                m = Swap fromIdx toIdx r r'
-        op (r, ms) (RotateCwMaker) =
-            (r', m:ms)
+                r2 = swapBalls r fromIdx toIdx
+                m = Swap fromIdx toIdx r1 r2
+        op (r1, ms) (RotateCwMaker) = (r2, m:ms)
             where
-                r' = rotateRackCw r
-                m = RotateCw r r'
-        op (r, ms) (RotateCcwMaker) =
-            (r', m:ms)
+                r2 = rotateRackCw r1
+                m = RotateCw r1 r2
+        op (r1, ms) (RotateCcwMaker) = (r2, m:ms)
             where
-                r' = rotateRackCcw r
-                m = RotateCcw r r'
+                r2 = rotateRackCcw r1
+                m = RotateCcw r1 r2
 
 newtype MoveMakersWrapper = MMW [MoveMaker] deriving Show
 
@@ -45,10 +41,10 @@ genMoveMakers :: Gen MoveMakersWrapper
 genMoveMakers = do
     maybeRotate <- frequency [
             (1, return Nothing),
-            (1, return $ Just RotateCwMaker),
-            (1, return $ Just RotateCcwMaker)
+            (0, return $ Just RotateCwMaker),
+            (0, return $ Just RotateCcwMaker)
         ]
-    numSwaps <- choose (1, 5)
+    numSwaps <- choose (1, 1)
     swaps <- vectorOf numSwaps genSwap
     return (MMW $ (maybeToList maybeRotate) ++ swaps)
 
@@ -71,8 +67,6 @@ genRackWrapper = do
 instance Arbitrary RackWrapper where
     arbitrary = genRackWrapper
 
--- prop_example :: RackWrapper -> MoveMakersWrapper -> Bool
--- prop_example (RW r) (MMW mms) = undefined
 
 prop_rotateCwThreeTimes :: RackWrapper -> Bool
 prop_rotateCwThreeTimes (RW r) = r == (rotateRackCw $ rotateRackCw $ rotateRackCw r)
@@ -86,14 +80,26 @@ prop_rotateCwThenCcw (RW r) = r == (rotateRackCcw $ rotateRackCw r)
 prop_rotateCcwThenCw :: RackWrapper -> Bool
 prop_rotateCcwThenCw (RW r) = r == (rotateRackCw $ rotateRackCcw r)
 
+prop_solveIncludesExpectedSolution :: MoveMakersWrapper -> Property
+prop_solveIncludesExpectedSolution (MMW mms) =
+    r' /= r ==> sm `elem` ss
+    where
+        r = correctRack
+        (r', ms) = applyMoveMakers mms r
+        sm = oppositeMoves ms
+        ss = solve r'
+
 main :: IO ()
 main = do
-    results <- mapM quickCheckResult [
+    results1 <- mapM quickCheckResult [
             prop_rotateCwThreeTimes,
             prop_rotateCcwThreeTimes,
             prop_rotateCwThenCcw,
             prop_rotateCcwThenCw
         ]
-    if all isSuccess results
+    results2 <- mapM quickCheckResult [
+            prop_solveIncludesExpectedSolution
+        ]
+    if all isSuccess $ results1 ++ results2
         then return ()
         else exitFailure
