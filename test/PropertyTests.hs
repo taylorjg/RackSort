@@ -85,22 +85,19 @@ prop_solveIncludesExpectedSolution (MMW mms) =
         conditionsHold =
             checkMoves1 &&
             checkMoves2 &&
-            checkMoves3 &&
             checkSolutions
+        -- check that each Swap move actually makes a noticable change to the rack
         checkMoves1 = all checkMove ms
             where
                 checkMove (Swap _ _ a b) = a /= b
                 checkMove _ = True
+        -- check that the indexes in the Swap moves don't overlap
         checkMoves2 = length idxs == (length $ nub idxs)
             where
                 idxs = foldl op [] ms
                 op acc (Swap a b _ _) = a:b:acc
                 op acc _ = acc
-        checkMoves3 = length rs == (length $ nub rs)
-            where
-                rs = foldl op [] ms
-                op acc (Swap _ _ _ a) = a:acc
-                op acc _ = acc
+        -- check that there are some solutions that don't start with a rotation
         checkSolutions = any f ss
             where
                 f s = case head s of
@@ -109,13 +106,14 @@ prop_solveIncludesExpectedSolution (MMW mms) =
 
 main :: IO ()
 main = do
-    results1 <- mapM quickCheckResult [
+    let args = stdArgs { maxSuccess = 1000 }
+    results1 <- mapM (quickCheckWithResult args) [
             prop_rotateCwThreeTimes,
             prop_rotateCcwThreeTimes,
             prop_rotateCwThenCcw,
             prop_rotateCcwThenCw
         ]
-    results2 <- mapM (quickCheckWithResult stdArgs { maxSuccess = 1000 })  [
+    results2 <- mapM (quickCheckWithResult args) [
             prop_solveIncludesExpectedSolution
         ]
     if all isSuccess $ results1 ++ results2
