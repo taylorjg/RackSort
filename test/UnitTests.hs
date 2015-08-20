@@ -1,7 +1,7 @@
-import RackSortLib
-import Test.HUnit
-import System.Exit (exitFailure)
-import Control.Monad (when)
+import           Control.Monad (when)
+import           RackSortLib
+import           System.Exit   (exitFailure)
+import           Test.HUnit
 
 --     a            k
 --    b c          l g
