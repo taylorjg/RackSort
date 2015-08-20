@@ -1,5 +1,5 @@
 import           Control.Arrow        (second)
-import           Data.Maybe           (maybeToList)
+import           Data.List            (nub)
 import           RackSortLib
 import           System.Exit          (exitFailure)
 import           Test.QuickCheck
@@ -24,7 +24,7 @@ applyMoveMakers mms r = second reverse $ foldl op (r, []) mms
     where
         op (r1, ms) (SwapMaker fromIdx toIdx) = (r2, m:ms)
             where
-                r2 = swapBalls r fromIdx toIdx
+                r2 = swapBalls r1 fromIdx toIdx
                 m = Swap fromIdx toIdx r1 r2
         op (r1, ms) (RotateCwMaker) = (r2, m:ms)
             where
@@ -39,14 +39,9 @@ newtype MoveMakersWrapper = MMW [MoveMaker] deriving Show
 
 genMoveMakers :: Gen MoveMakersWrapper
 genMoveMakers = do
-    maybeRotate <- frequency [
-            (1, return Nothing),
-            (0, return $ Just RotateCwMaker),
-            (0, return $ Just RotateCcwMaker)
-        ]
-    numSwaps <- choose (1, 1)
+    numSwaps <- choose (1, 4)
     swaps <- vectorOf numSwaps genSwap
-    return (MMW $ (maybeToList maybeRotate) ++ swaps)
+    return (MMW swaps)
 
 genSwap :: Gen MoveMaker
 genSwap = do
@@ -67,7 +62,6 @@ genRackWrapper = do
 instance Arbitrary RackWrapper where
     arbitrary = genRackWrapper
 
-
 prop_rotateCwThreeTimes :: RackWrapper -> Bool
 prop_rotateCwThreeTimes (RW r) = r == (rotateRackCw $ rotateRackCw $ rotateRackCw r)
 
@@ -82,12 +76,34 @@ prop_rotateCcwThenCw (RW r) = r == (rotateRackCw $ rotateRackCcw r)
 
 prop_solveIncludesExpectedSolution :: MoveMakersWrapper -> Property
 prop_solveIncludesExpectedSolution (MMW mms) =
-    r' /= r ==> sm `elem` ss
+    checkMoves1 ms && checkMoves2 ms && checkMoves3 ms && checkSolutions ss ==> sm `elem` ss
     where
         r = correctRack
         (r', ms) = applyMoveMakers mms r
         sm = oppositeMoves ms
         ss = solve r'
+        checkMoves1 ms' = all checkMove ms'
+            where
+                checkMove (Swap _ _ a b) = a /= b
+                checkMove _ = True
+        checkMoves2 ms' =
+            length idxs == (length $ nub idxs)
+            where
+                idxs = foldl op [] ms'
+                op acc (Swap a b _ _) = a:b:acc
+                op acc _ = acc
+        checkMoves3 ms' =
+            length rs == (length $ nub rs)
+            where
+                rs = foldl op [] ms'
+                op acc (Swap _ _ _ a) = a:acc
+                op acc _ = acc
+        checkSolutions ss' =
+            any f ss'
+            where
+                f s = case head s of
+                    Swap _ _ _ _ -> True
+                    _ -> False
 
 main :: IO ()
 main = do
@@ -97,7 +113,7 @@ main = do
             prop_rotateCwThenCcw,
             prop_rotateCcwThenCw
         ]
-    results2 <- mapM quickCheckResult [
+    results2 <- mapM (quickCheckWithResult stdArgs { maxSuccess = 1000 })  [
             prop_solveIncludesExpectedSolution
         ]
     if all isSuccess $ results1 ++ results2

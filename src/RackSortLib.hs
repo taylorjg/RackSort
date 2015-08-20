@@ -85,31 +85,30 @@ search finished refine emptysoln =
             | Just soln <- finished partial = [soln]
             | otherwise  = concatMap generate (refine partial)
 
+pickBestOrientation :: Rack -> Partial
+pickBestOrientation r = snd tbest
+    where
+        rcw = rotateRackCw r
+        rccw = rotateRackCcw r
+        t1 = (wrongBalls r, (r, []))
+        t2 = (wrongBalls rcw, (rcw, [RotateCw r rcw]))
+        t3 = (wrongBalls rccw, (rccw, [RotateCcw r rccw]))
+        tbest = minimumBy minWrongBalls [t1, t2, t3]
+        minWrongBalls (ws1, _) (ws2, _) = length ws1 `compare` length ws2
+
 solve :: Rack -> [Solution]
-solve r =
-    search finished refine (r, [])
+solve rack =
+    search finished refine emptysoln
     where
         finished :: Partial -> Maybe Solution
-        finished (r1, ms)
-            | r1 == correctRack = Just (reverse ms)
+        finished (r, ms)
+            | r == correctRack = Just (reverse ms)
             | otherwise = Nothing
 
-        pickBestOrientation :: Rack -> (Rack, [(Int, [Int])], [Partial])
-        pickBestOrientation r1 = res
-            where
-                r2 = rotateRackCw r1
-                r3 = rotateRackCcw r1
-                res1 = (r1, wrongBalls r1, [])
-                res2 = (r2, wrongBalls r2, [(r2, [RotateCw r1 r2])])
-                res3 = (r3, wrongBalls r3, [(r3, [RotateCcw r1 r3])])
-                res = minimumBy f [res1, res2, res3]
-                f (_, w1, _) (_, w2, _) = length w1 `compare` length w2
-
         refine :: (Partial -> [Partial])
-        refine (r1, ms) =
-            foldl op1 ps bestw
+        refine (r, ms) =
+            foldl op1 [] (wrongBalls r)
             where
-                (bestr, bestw, ps) = pickBestOrientation r1
                 op1 :: [Partial] -> (Int, [Int]) -> [Partial]
                 op1 acc1 (fromIdx, toIdxs) =
                     acc1 ++ foldl op2 [] toIdxs
@@ -118,6 +117,9 @@ solve r =
                         op2 acc2 toIdx =
                             acc2 ++ [p']
                             where
-                                r' = swapBalls bestr fromIdx toIdx
-                                m = Swap fromIdx toIdx bestr r'
+                                r' = swapBalls r fromIdx toIdx
+                                m = Swap fromIdx toIdx r r'
                                 p' = (r', m:ms)
+
+        emptysoln :: Partial
+        emptysoln = pickBestOrientation rack
