@@ -2,10 +2,10 @@ module RackSortPrintLib (
     printSolution
 ) where
 
+import           Data.List           (intersperse)
 import           Data.List.Split     (splitOn)
 import           RackSortLib
 import           System.Console.ANSI
-import           Control.Arrow       (second)
 
 renderRack :: Rack -> [Int] -> [String]
 renderRack r highlightIdxs =
@@ -24,23 +24,13 @@ renderRack r highlightIdxs =
                         colour = r !! idx
 
 putStrLnWithHighlights :: String -> IO ()
-putStrLnWithHighlights = writeTextSegments . lineToTextSegments
+putStrLnWithHighlights = writeTextSegments . splitLine
     where
-        writeTextSegments textSegments = do
-            mapM_ (\(ts, w) -> w ts) categorisedTextSegments
-            putStrLn ""
-            where
-                categorisedTextSegments = categoriseTextSegments textSegments
-        lineToTextSegments = splitOn "`"
-        categoriseTextSegments textSegments =
-            map (second chooseWriter) $ zip textSegments [0..]
-            where
-                chooseWriter :: Int -> String -> IO ()
-                chooseWriter n
-                    | even n = normalWriter
-                    | otherwise = highlightingWriter
-        normalWriter = putStr
-        highlightingWriter ts = do
+        writeTextSegments tss = sequence_ $ categoriseTextSegments tss ++ [putStrLn ""]
+        splitLine = splitOn "`"
+        categoriseTextSegments = zipWith id (cycle [w1, w2])
+        w1 = putStr
+        w2 ts = do
             setSGR [ SetColor Foreground Vivid Yellow ]
             putStr ts
             setSGR [ Reset ]
@@ -51,10 +41,10 @@ printBeforeAndAfterRacks fromRack toRack highlightIdxs =
     where
         combinedLines = combineLines [
                 renderRack fromRack highlightIdxs,
-                divider,
+                arrow,
                 renderRack toRack highlightIdxs
             ]
-        divider = [
+        arrow = [
                 replicate 10 ' ',
                 replicate 10 ' ',
                 replicate 4 ' ' ++ "=>" ++ replicate 4 ' ',
@@ -67,19 +57,20 @@ printMove :: Move -> IO ()
 printMove (Swap fromIdx toIdx fromRack toRack) = do
     putStrLn $ "Swap index " ++ show fromIdx ++ " with " ++ show toIdx
     printBeforeAndAfterRacks fromRack toRack [fromIdx, toIdx]
-    putStrLn $ replicate 28 '-'
 
 printMove (RotateCw fromRack toRack) = do
     putStrLn "Rotate rack clockwise"
     printBeforeAndAfterRacks fromRack toRack []
-    putStrLn $ replicate 28 '-'
 
 printMove (RotateCcw fromRack toRack) = do
     putStrLn "Rotate rack counter clockwise"
     printBeforeAndAfterRacks fromRack toRack []
-    putStrLn $ replicate 28 '-'
+
+printDivider :: IO ()
+printDivider = putStrLn $ replicate 28 '-'
 
 printSolution :: Solution -> IO ()
 printSolution s = do
-    putStrLn $ replicate 28 '-'
-    mapM_ printMove s
+    printDivider
+    sequence_ $ intersperse printDivider (printMove `fmap` s)
+    printDivider

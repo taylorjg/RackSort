@@ -27,11 +27,20 @@ yellow = 'Y'
 red = 'R'
 black = 'B'
 
---         0
---       1   2
---     3   4   5
---   6   7   8   9
--- 10  11  12  13  14
+--         0                       R
+--       1   2                   Y   R
+--     3   4   5               R   B   Y
+--   6   7   8   9           Y   R   Y   R
+-- 10  11  12  13  14      R   Y   Y   R   Y
+
+correctRack :: Rack
+correctRack = filter (/=' ') $ concat [
+               "R",
+             "Y   R",
+           "R   B   Y",
+         "Y   R   Y   R",
+       "R   Y   Y   R   Y"
+    ]
 
 yellowIndices :: [Int]
 yellowIndices = [1, 5, 6, 8, 11, 12, 14]
@@ -48,9 +57,6 @@ coloursToIndices = [
         (red, redIndices),
         (black, blackIndices)
     ]
-
-correctRack :: Rack
-correctRack = "RYRRBYYRYRRYYRY"
 
 swapBalls :: Rack -> Int -> Int -> Rack
 swapBalls r idx1 idx2 =
