@@ -76,30 +76,32 @@ prop_rotateCcwThenCw (RW r) = r == (rotateRackCw $ rotateRackCcw r)
 
 prop_solveIncludesExpectedSolution :: MoveMakersWrapper -> Property
 prop_solveIncludesExpectedSolution (MMW mms) =
-    checkMoves1 ms && checkMoves2 ms && checkMoves3 ms && checkSolutions ss ==> sm `elem` ss
+    conditionsHold ==> sm `elem` ss
     where
         r = correctRack
         (r', ms) = applyMoveMakers mms r
         sm = oppositeMoves ms
         ss = solve r'
-        checkMoves1 ms' = all checkMove ms'
+        conditionsHold =
+            checkMoves1 &&
+            checkMoves2 &&
+            checkMoves3 &&
+            checkSolutions
+        checkMoves1 = all checkMove ms
             where
                 checkMove (Swap _ _ a b) = a /= b
                 checkMove _ = True
-        checkMoves2 ms' =
-            length idxs == (length $ nub idxs)
+        checkMoves2 = length idxs == (length $ nub idxs)
             where
-                idxs = foldl op [] ms'
+                idxs = foldl op [] ms
                 op acc (Swap a b _ _) = a:b:acc
                 op acc _ = acc
-        checkMoves3 ms' =
-            length rs == (length $ nub rs)
+        checkMoves3 = length rs == (length $ nub rs)
             where
-                rs = foldl op [] ms'
+                rs = foldl op [] ms
                 op acc (Swap _ _ _ a) = a:acc
                 op acc _ = acc
-        checkSolutions ss' =
-            any f ss'
+        checkSolutions = any f ss
             where
                 f s = case head s of
                     Swap _ _ _ _ -> True
