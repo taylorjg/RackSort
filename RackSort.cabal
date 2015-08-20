@@ -28,5 +28,5 @@ test-suite PropertyTests
     type:               exitcode-stdio-1.0
     hs-source-dirs:     test
     main-is:            PropertyTests.hs
-    build-depends:      base >=4.7 && <4.8, QuickCheck, RackSort
+    build-depends:      base >=4.7 && <4.8, QuickCheck >=2.8, RackSort
     default-language:   Haskell2010

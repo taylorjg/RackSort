@@ -2,17 +2,17 @@ module RackSortPrintLib (
     printSolution
 ) where
 
-import           Data.List           (intersperse)
 import           Data.List.Split     (splitOn)
 import           RackSortLib
 import           System.Console.ANSI
+import           Control.Arrow       (second)
 
 renderRack :: Rack -> [Int] -> [String]
 renderRack r highlightIdxs =
     map renderLine [0..4]
     where
         renderLine n =
-            padding ++ concat (intersperse " " colours) ++ padding
+            padding ++ unwords colours ++ padding
             where
                 padding = replicate (4 - n) ' '
                 idxs = take (n + 1) $ drop (sum [1..n]) [0..14]
@@ -31,28 +31,28 @@ putStrLnWithHighlights = writeTextSegments . lineToTextSegments
             putStrLn ""
             where
                 categorisedTextSegments = categoriseTextSegments textSegments
-        lineToTextSegments line = splitOn "`" line
+        lineToTextSegments = splitOn "`"
         categoriseTextSegments textSegments =
-            map (\(ts, idx) -> (ts, chooseWriter idx)) $ zip textSegments [0..]
+            map (second chooseWriter) $ zip textSegments [0..]
             where
                 chooseWriter :: Int -> String -> IO ()
                 chooseWriter n
                     | even n = normalWriter
                     | otherwise = highlightingWriter
-        normalWriter ts = putStr ts
+        normalWriter = putStr
         highlightingWriter ts = do
             setSGR [ SetColor Foreground Vivid Yellow ]
             putStr ts
-            setSGR [ SetColor Foreground Dull White ]
+            setSGR [ Reset ]
 
 printBeforeAndAfterRacks :: Rack -> Rack -> [Int] -> IO ()
-printBeforeAndAfterRacks fromRack toRack highlightIdxs = do
+printBeforeAndAfterRacks fromRack toRack highlightIdxs =
     mapM_ putStrLnWithHighlights combinedLines
     where
         combinedLines = combineLines [
-                (renderRack fromRack highlightIdxs),
+                renderRack fromRack highlightIdxs,
                 divider,
-                (renderRack toRack highlightIdxs)
+                renderRack toRack highlightIdxs
             ]
         divider = [
                 replicate 10 ' ',
@@ -61,11 +61,7 @@ printBeforeAndAfterRacks fromRack toRack highlightIdxs = do
                 replicate 10 ' ',
                 replicate 10 ' '
             ]
-        combineLines liness =
-            loop liness (replicate 5 "")
-            where
-                loop [] ls = ls
-                loop (xs:xss) ls = loop xss (zipWith (++) ls xs)
+        combineLines = foldl (zipWith (++)) (replicate 5 "")
 
 printMove :: Move -> IO ()
 printMove (Swap fromIdx toIdx fromRack toRack) = do
