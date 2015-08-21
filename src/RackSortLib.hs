@@ -34,13 +34,7 @@ black = 'B'
 -- 10  11  12  13  14      R   Y   Y   R   Y
 
 correctRack :: Rack
-correctRack = filter (/=' ') $ concat [
-               "R",
-             "Y   R",
-           "R   B   Y",
-         "Y   R   Y   R",
-       "R   Y   Y   R   Y"
-    ]
+correctRack = "RYRRBYYRYRRYYRY"
 
 yellowIndices :: [Int]
 yellowIndices = [1, 5, 6, 8, 11, 12, 14]
